@@ -5,14 +5,16 @@ https://github.com/ml5js/ml5-examples/tree/master/p5js/PoseNet
 
 */
 
-let w = 640;
-let h = 480;
+let h = 640;
+let w = 480;
 let video;
 let poseNet;
 let poses = [];
 let skeletons = [];
 
 const particles = [];
+
+var sickImage, okImage, lonelyImage;
 
 class Particle {
   constructor() {
@@ -27,9 +29,10 @@ class Particle {
     this.edges();
   }
 
-  changeParams(v, c) {
+  changeParams(v, c, s) {
     this.vel = v;
     this.color = c;
+    this.size = s;
   }
 
   draw() {
@@ -70,6 +73,8 @@ class Particle {
 
 
 function setup() {
+
+  
   createCanvas(1300, 600);
   video = createCapture(VIDEO);
 
@@ -84,6 +89,11 @@ function setup() {
     particles.push(new Particle());
   }
 
+
+  sickImage = loadImage('images/sick.png');
+  okImage = loadImage('images/ok.jpg');
+  lonelyImage = loadImage('images/lonely.png');
+
   video.hide();
   fill(255);
   stroke(255);
@@ -91,17 +101,19 @@ function setup() {
 
 function draw() {
   background(1000, 80);
-  //image(video, 0, 0, w, h);
-  particles.forEach((particle, idx) => {
-    particle.update();
-    particle.draw();
-    //particle.checkParticles(particles.slice(idx));
-  });
+  //image(sickImage, 0, 0, w, h);
   drawKeypoints();
   drawSkeleton();
 }
 
 
+
+function drawParticles() {
+  particles.forEach((particle, idx) => {
+    particle.update();
+    particle.draw();
+  });
+}
 
 function drawSkeleton() {
   for (let i = 0; i < poses.length; i++) {
@@ -132,37 +144,73 @@ function drawKeypoints() {
 
 var prevMood = 'ok';
 var currMood;
-var velocity, color;
+var velocity, color, size = 0;
 var changed = false;
 function changeImages(dist) {
-  if (dist < 180) {
+
+
+
+  if (dist < 130) {
+
+    image(lonelyImage, 420, 50, w, h);
+  }
+  if (130 <= dist && dist < 190) {
+    drawParticles();
     velocity = createVector(random(-1, 1), random(-1, 1));
     currMood = 'lonely';
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(0, 0, 255, 0.5)';
+    size += 1;
   }
-  if (180 <= dist && dist < 280 ) {
+  if (190 <= dist && dist < 250) {
+    drawParticles();
     velocity = createVector(random(-10, 10), random(-10, 10));
     currMood = 'ok';
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(255, 0, 0, 0.5)';
+    size -= 1;
   }
-  if (dist >= 280) {
+  if (250 <= dist && dist < 310) {
+    image(okImage, 420, 50, w, h);
+  }
+  if (310 <= dist && dist < 360) {
+    drawParticles();
+    velocity = createVector(random(-10, 10), random(-10, 10));
+    currMood = 'ok';
+    if (prevMood !== currMood)
+      changed = true;
+    color = 'rgba(255, 0, 0, 0.5)';
+    size += 1;
+  }
+  if (360 <= dist && dist < 410) {
+    drawParticles();
     velocity = createVector(random(-15, 15), random(-15, 15));
     currMood = 'sick';
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(0, 255, 0, 0.5)';
+    size -= 1;
+  }
+  if (dist >= 410) {
+    image(sickImage, 420, 50, w, h);
+
   }
   console.log(currMood);
+
+
   prevMood = currMood;
   if (changed) {
-    console.log("changed !!!!!!!!!!!!!!!!");
     changed = false;
+    if (size > 5) {
+      size = 5;
+    }
+    else if (size < 0) {
+      size = 2;
+    }
     particles.forEach((particle, idx) => {
-      particle.changeParams(velocity, color);
+      particle.changeParams(velocity, color, size);
     });
   }
 }
