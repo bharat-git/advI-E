@@ -14,8 +14,7 @@ let skeletons = [];
 
 const particles = [];
 
-var sickImage, okImage, lonelyImage;
-
+var Sickconverge, SickDisperse, Normalconverge, NormalDisperse, Lonelyconverge, LonelyDisperse;
 class Particle {
   constructor() {
     this.pos = createVector(random(width), random(height));
@@ -29,10 +28,9 @@ class Particle {
     this.edges();
   }
 
-  changeParams(v, c, s) {
+  changeParams(v, c) {
     this.vel = v;
     this.color = c;
-    this.size = s;
   }
 
   draw() {
@@ -74,7 +72,7 @@ class Particle {
 
 function setup() {
 
-  
+
   createCanvas(1300, 600);
   video = createCapture(VIDEO);
 
@@ -90,13 +88,25 @@ function setup() {
   }
 
 
-  sickImage = loadImage('images/sick.png');
-  okImage = loadImage('images/ok.jpg');
-  lonelyImage = loadImage('images/lonely.png');
-
+  Sickconverge = createVideo(['videos/SickConverge.mov']);
+  SickDisperse = createVideo(['videos/SickDisperse.mov']);
+  Normalconverge = createVideo(['videos/NormalConverge.mov']);
+  NormalDisperse = createVideo(['videos/NormalDisperse.mov']);
+  Lonelyconverge = createVideo(['videos/LonelyConverge.mov']);
+  LonelyDisperse = createVideo(['videos/LonelyDisperse.mov']);
+  hideAllVideo();
   video.hide();
   fill(255);
   stroke(255);
+}
+
+function hideAllVideo() {
+  Sickconverge.hide();
+  SickDisperse.hide();
+  Normalconverge.hide();
+  NormalDisperse.hide();
+  Lonelyconverge.hide();
+  LonelyDisperse.hide();
 }
 
 function draw() {
@@ -134,7 +144,6 @@ function drawKeypoints() {
       // }
     }
   }
-  console.log(poses);
   if (poses.length > 0) {
     const dist = poses[0].pose.keypoints[5].position.x - poses[0].pose.keypoints[6].position.x;
     console.log(dist);
@@ -146,22 +155,38 @@ var prevMood = 'ok';
 var currMood;
 var velocity, color, size = 0;
 var changed = false;
+var prevDistance;
+var sickbool = true, lonelyBool = true, okbool = true;
 function changeImages(dist) {
 
 
 
   if (dist < 130) {
-
-    image(lonelyImage, 420, 50, w, h);
+    currMood = 'lonely';
+    sickbool = okbool = true;
+    if (lonelyBool) {
+      lonelyBool = false;
+      if (prevDistance > dist) {
+        hideAllVideo();
+        //Lonelyconverge.show();
+        Lonelyconverge.play();
+        image(Lonelyconverge, 420, 50, w, h);
+      }
+      else if (prevDistance < dist) {
+        hideAllVideo();
+        //LonelyDisperse.show();
+        LonelyDisperse.play();
+        image(LonelyDisperse, 420, 50, w, h);
+      }
+    }
   }
   if (130 <= dist && dist < 190) {
     drawParticles();
-    velocity = createVector(random(-1, 1), random(-1, 1));
-    currMood = 'lonely';
+    velocity = createVector(random(-5, 5), random(-5, 5));
+    currMood = 'ok';
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(0, 0, 255, 0.5)';
-    size += 1;
   }
   if (190 <= dist && dist < 250) {
     drawParticles();
@@ -170,10 +195,26 @@ function changeImages(dist) {
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(255, 0, 0, 0.5)';
-    size -= 1;
   }
   if (250 <= dist && dist < 310) {
-    image(okImage, 420, 50, w, h);
+    lonelyBool = sickbool = true;
+    currMood = 'ok';
+    if (okbool) {
+      okbool = false;
+
+      if (prevDistance > dist) {
+        hideAllVideo();
+        // Normalconverge.show();
+        Normalconverge.play();
+        image(Normalconverge, 420, 50, w, h);
+      }
+      else if (prevDistance < dist) {
+        hideAllVideo();
+        // NormalDisperse.show();
+        NormalDisperse.play();
+        image(NormalDisperse, 420, 50, w, h);
+      }
+    }
   }
   if (310 <= dist && dist < 360) {
     drawParticles();
@@ -182,35 +223,41 @@ function changeImages(dist) {
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(255, 0, 0, 0.5)';
-    size += 1;
   }
   if (360 <= dist && dist < 410) {
     drawParticles();
-    velocity = createVector(random(-15, 15), random(-15, 15));
-    currMood = 'sick';
+    velocity = createVector(random(-20, 20), random(-20, 20));
+    currMood = 'ok';
     if (prevMood !== currMood)
       changed = true;
     color = 'rgba(0, 255, 0, 0.5)';
-    size -= 1;
   }
   if (dist >= 410) {
-    image(sickImage, 420, 50, w, h);
-
+    currMood = 'sick';
+    okbool = lonelyBool = true;
+    if (sickbool) {
+      sickbool = false;
+      if (prevDistance > dist) {
+        hideAllVideo();
+        // SickDisperse.show();
+        SickDisperse.play();
+        image(SickDisperse, 420, 50, w, h);
+      }
+      else if (prevDistance < dist) {
+        hideAllVideo();
+        // Sickconverge.show();
+        Sickconverge.play();
+        image(Sickconverge, 420, 50, w, h);
+      }
+    }
   }
   console.log(currMood);
-
-
   prevMood = currMood;
+  prevDistance = dist;
   if (changed) {
     changed = false;
-    if (size > 5) {
-      size = 5;
-    }
-    else if (size < 0) {
-      size = 2;
-    }
     particles.forEach((particle, idx) => {
-      particle.changeParams(velocity, color, size);
+      particle.changeParams(velocity, color);
     });
   }
 }
@@ -218,5 +265,3 @@ function changeImages(dist) {
 function modelLoaded() {
   print('model loaded');
 }
-
-
