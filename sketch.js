@@ -11,16 +11,17 @@ let video;
 let poseNet;
 let poses = [];
 let skeletons = [];
+let canvas;
 
 const particles = [];
 
-var sickImage, okImage, lonelyImage;
+let totalTime;
 
 class Particle {
   constructor() {
     this.pos = createVector(random(width), random(height));
-    this.vel = createVector(random(-20, 20), random(-20, 20));
-    this.size = 5;
+    this.vel = createVector(-20, 20);
+    this.size = 4;
     this.color = 'rgba(0, 255, 0, 0.5)';
   }
 
@@ -29,10 +30,9 @@ class Particle {
     this.edges();
   }
 
-  changeParams(v, c, s) {
+  changeParams(v, c) {
     this.vel = v;
     this.color = c;
-    this.size = s;
   }
 
   draw() {
@@ -49,14 +49,6 @@ class Particle {
     if (this.pos.y < 0 || this.pos.y > height) {
       this.vel.y *= -1;
     }
-
-    // 		if(this.pos.x > width) {
-    // 			this.pos.x = 0;
-    // 		}
-
-    // 		if(this.pos.y > height) {
-    // 			this.pos.y = 0;
-    // 		}
   }
 
   checkParticles(particles) {
@@ -75,35 +67,37 @@ class Particle {
 function setup() {
 
   
-  createCanvas(1300, 600);
-  video = createCapture(VIDEO);
+  canvas = createCanvas(1378, 750);
+  canvas.style('z-index', '1');
+  capture = createCapture(VIDEO);
 
-  poseNet = ml5.poseNet(video, modelLoaded);
+  video = createVideo(['FinalestFinal.mov']);
+  video.position(200,100);
+  video.play();
+  video.hide();
+  poseNet = ml5.poseNet(capture, modelLoaded);
 
   poseNet.on('pose', function (results) {
     poses = results;
   });
 
-  const particlesLength = Math.min(Math.floor(window.innerWidth / 10), 100);
+  const particlesLength = 500;
   for (let i = 0; i < particlesLength; i++) {
     particles.push(new Particle());
   }
 
 
-  sickImage = loadImage('images/sick.png');
-  okImage = loadImage('images/ok.jpg');
-  lonelyImage = loadImage('images/lonely.png');
-
-  video.hide();
+  capture.hide();
   fill(255);
   stroke(255);
 }
 
 function draw() {
-  background(1000, 80);
-  //image(sickImage, 0, 0, w, h);
+  background(1380, 80);
+  image(video, 0, 0, 1378, 750);
+  totalTime = video.duration();
   drawKeypoints();
-  drawSkeleton();
+ // drawSkeleton();
 }
 
 
@@ -134,83 +128,72 @@ function drawKeypoints() {
       // }
     }
   }
-  console.log(poses);
   if (poses.length > 0) {
     const dist = poses[0].pose.keypoints[5].position.x - poses[0].pose.keypoints[6].position.x;
     console.log(dist);
-    changeImages(dist);
+    changevideoTime(dist);
   }
 }
 
-var prevMood = 'ok';
-var currMood;
-var velocity, color, size = 0;
-var changed = false;
-function changeImages(dist) {
+var currMood, prevMood, changed; 
+var velocity, clr = 'rgba(0, 0, 255, 0.5)';
+function changevideoTime(dist) {
 
-
-
-  if (dist < 130) {
-
-    image(lonelyImage, 420, 50, w, h);
+  if (dist < 100) {
+    currMood = 'lonely-complete';
+    video.time(0);
   }
-  if (130 <= dist && dist < 190) {
+  if (100 <= dist && dist < 160) {
+    video.time(floor((dist-100)/10));
     drawParticles();
-    velocity = createVector(random(-1, 1), random(-1, 1));
+    velocity = createVector(-5, 5);
     currMood = 'lonely';
     if (prevMood !== currMood)
       changed = true;
-    color = 'rgba(0, 0, 255, 0.5)';
-    size += 1;
+      clr = 'rgba(0, 0, 255, 0.5)';
   }
-  if (190 <= dist && dist < 250) {
+  if (160<= dist && dist < 220) {
+    video.time(floor((dist-100)/10));
     drawParticles();
-    velocity = createVector(random(-10, 10), random(-10, 10));
+    velocity = createVector(-10, 10);
+    currMood = 'ok-partial';
+    if (prevMood !== currMood)
+      changed = true;
+      clr = 'rgba(255, 0, 0, 0.5)';
+  }
+  if (220 <= dist && dist < 280) {
+    currMood = 'ok';
+    video.time(16);
+  }
+  if (280 <= dist && dist < 340) {
+    video.time(floor((dist-100)/10));
+    drawParticles();
+    velocity = createVector(-10, 10);
     currMood = 'ok';
     if (prevMood !== currMood)
       changed = true;
-    color = 'rgba(255, 0, 0, 0.5)';
-    size -= 1;
+      clr = 'rgba(255, 0, 0, 0.5)';
   }
-  if (250 <= dist && dist < 310) {
-    image(okImage, 420, 50, w, h);
-  }
-  if (310 <= dist && dist < 360) {
+  if (340 <= dist && dist < 400) {
+    video.time(floor((dist-100)/10));
     drawParticles();
-    velocity = createVector(random(-10, 10), random(-10, 10));
-    currMood = 'ok';
+    velocity = createVector(-20,20);
+    currMood = 'sick-partial';
     if (prevMood !== currMood)
       changed = true;
-    color = 'rgba(255, 0, 0, 0.5)';
-    size += 1;
+      clr = 'rgba(0, 255, 0, 0.5)';
   }
-  if (360 <= dist && dist < 410) {
-    drawParticles();
-    velocity = createVector(random(-15, 15), random(-15, 15));
+  if (dist >= 400) {
     currMood = 'sick';
-    if (prevMood !== currMood)
-      changed = true;
-    color = 'rgba(0, 255, 0, 0.5)';
-    size -= 1;
-  }
-  if (dist >= 410) {
-    image(sickImage, 420, 50, w, h);
-
+    video.time(totalTime-1);
   }
   console.log(currMood);
-
-
   prevMood = currMood;
+  prevDistance = dist;
   if (changed) {
     changed = false;
-    if (size > 5) {
-      size = 5;
-    }
-    else if (size < 0) {
-      size = 2;
-    }
     particles.forEach((particle, idx) => {
-      particle.changeParams(velocity, color, size);
+      particle.changeParams(velocity, clr);
     });
   }
 }
